@@ -30,6 +30,7 @@ export default function DashboardPage() {
   const [loadingDashboard, setLoadingDashboard] = useState<boolean>(true);
 
   const fetchDashboardData = useCallback(async () => {
+    if (!user) return;
     try {
       setLoadingDashboard(true);
       const [aRes, rRes] = await Promise.all([
@@ -47,11 +48,15 @@ export default function DashboardPage() {
         setResults(rRes.data.results);
       }
     } catch (err) {
+      if (err instanceof Error && (err.message.includes('authorized') || err.message.includes('401'))) {
+        router.push('/login');
+        return;
+      }
       console.warn('Dashboard data fetch warning:', err);
     } finally {
       setLoadingDashboard(false);
     }
-  }, []);
+  }, [user, router]);
 
   useEffect(() => {
     if (!isLoading && !user) {

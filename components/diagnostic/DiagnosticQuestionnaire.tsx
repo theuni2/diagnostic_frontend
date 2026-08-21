@@ -52,11 +52,15 @@ export const DiagnosticQuestionnaire = () => {
         );
       }
     } catch (err) {
+      if (err instanceof Error && (err.message.includes('authorized') || err.message.includes('401'))) {
+        router.push('/login');
+        return;
+      }
       setError(err instanceof Error ? err.message : 'Error initializing diagnostic.');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     initDiagnostic();
