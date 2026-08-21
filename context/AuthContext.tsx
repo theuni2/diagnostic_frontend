@@ -48,6 +48,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password?: string) => {
     const res = await apiClient.login({ email, password });
     if (res.success && res.data) {
+      const token = res.data.token || (res as unknown as { token?: string }).token;
+      if (token && typeof window !== 'undefined') {
+        localStorage.setItem('auth_token', token);
+      }
       setUser(res.data.user);
       setProfile(res.data.profile);
     }
@@ -56,6 +60,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (name: string, email: string, password?: string) => {
     const res = await apiClient.register({ name, email, password });
     if (res.success && res.data) {
+      const token = res.data.token || (res as unknown as { token?: string }).token;
+      if (token && typeof window !== 'undefined') {
+        localStorage.setItem('auth_token', token);
+      }
       setUser(res.data.user);
       setProfile(res.data.profile);
     }

@@ -265,8 +265,9 @@ export const apiClient = {
       method: 'POST',
       body: JSON.stringify(payload),
     });
-    if (typeof window !== 'undefined' && res.data?.token) {
-      localStorage.setItem('auth_token', res.data.token);
+    const token = res.data?.token || (res as unknown as { token?: string }).token;
+    if (typeof window !== 'undefined' && token) {
+      localStorage.setItem('auth_token', token);
     }
     return res;
   },
@@ -276,8 +277,9 @@ export const apiClient = {
       method: 'POST',
       body: JSON.stringify(payload),
     });
-    if (typeof window !== 'undefined' && res.data?.token) {
-      localStorage.setItem('auth_token', res.data.token);
+    const token = res.data?.token || (res as unknown as { token?: string }).token;
+    if (typeof window !== 'undefined' && token) {
+      localStorage.setItem('auth_token', token);
     }
     return res;
   },
