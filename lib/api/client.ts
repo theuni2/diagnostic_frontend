@@ -219,15 +219,25 @@ export interface DiagnosticResultData {
 export interface AuthMeResponseData {
   user: User;
   profile: StudentProfile;
+  token?: string;
 }
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> || {}),
+  };
+
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+  }
+
   const config: RequestInit = {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
+    headers,
     credentials: 'include',
     cache: 'no-store',
   };
@@ -236,6 +246,9 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   const data = await response.json();
 
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== 'undefined') {
+      localStorage.removeItem('auth_token');
+    }
     throw new Error(data.message || `Request failed with status ${response.status}`);
   }
 
@@ -247,22 +260,36 @@ export const apiClient = {
   getHealth: () => request<{ message: string }>('/health'),
 
   // Auth
-  register: (payload: { name: string; email: string; password?: string }) =>
-    request<AuthMeResponseData>('/auth/register', {
+  register: async (payload: { name: string; email: string; password?: string }) => {
+    const res = await request<AuthMeResponseData>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(payload),
-    }),
+    });
+    if (typeof window !== 'undefined' && res.data?.token) {
+      localStorage.setItem('auth_token', res.data.token);
+    }
+    return res;
+  },
 
-  login: (payload: { email: string; password?: string }) =>
-    request<AuthMeResponseData>('/auth/login', {
+  login: async (payload: { email: string; password?: string }) => {
+    const res = await request<AuthMeResponseData>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(payload),
-    }),
+    });
+    if (typeof window !== 'undefined' && res.data?.token) {
+      localStorage.setItem('auth_token', res.data.token);
+    }
+    return res;
+  },
 
-  logout: () =>
-    request<null>('/auth/logout', {
+  logout: async () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('auth_token');
+    }
+    return request<null>('/auth/logout', {
       method: 'POST',
-    }),
+    });
+  },
 
   getMe: () => request<AuthMeResponseData>('/auth/me'),
 
