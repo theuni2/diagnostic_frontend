@@ -24,51 +24,80 @@ import {
 export default function DashboardPage() {
   const router = useRouter();
   const { user, profile, isLoading } = useAuth();
-  console.log('user', user);
-  console.log('profile', profile);
-  console.log('isLoading', isLoading);
+
+  console.log('[DashboardPage] Render step 1: Component evaluated', {
+    user,
+    profile,
+    isLoading,
+  });
+
   const [activeAssessment, setActiveAssessment] = useState<AssessmentData | null>(null);
   const [results, setResults] = useState<DiagnosticResultData[]>([]);
   const [loadingDashboard, setLoadingDashboard] = useState<boolean>(true);
 
+  console.log('[DashboardPage] Render step 2: State snapshot', {
+    hasActiveAssessment: !!activeAssessment,
+    resultsCount: results.length,
+    loadingDashboard,
+  });
+
   const fetchDashboardData = useCallback(async () => {
-    // if (!user) return;
+    console.log('[DashboardPage] fetchDashboardData step 1: Triggered', { userId: user?.id, email: user?.email });
+    if (!user) {
+      console.log('[DashboardPage] fetchDashboardData step 2: No user logged in, skipping API calls');
+      return;
+    }
     try {
+      console.log('[DashboardPage] fetchDashboardData step 3: Setting loadingDashboard to true');
       setLoadingDashboard(true);
+      console.log('[DashboardPage] fetchDashboardData step 4: Fetching active assessment & diagnostic results...');
       const [aRes, rRes] = await Promise.all([
         apiClient.getActiveAssessment(),
         apiClient.getDiagnosticResults(),
       ]);
+      console.log('[DashboardPage] fetchDashboardData step 5: API responses received', { aRes, rRes });
 
       if (aRes.success && aRes.data?.assessment) {
+        console.log('[DashboardPage] fetchDashboardData step 6: Active assessment found', aRes.data.assessment);
         setActiveAssessment(aRes.data.assessment);
       } else {
+        console.log('[DashboardPage] fetchDashboardData step 6: No active assessment found');
         setActiveAssessment(null);
       }
 
       if (rRes.success && rRes.data?.results) {
+        console.log('[DashboardPage] fetchDashboardData step 7: Diagnostic results found (count:', rRes.data.results.length, ')');
         setResults(rRes.data.results);
+      } else {
+        console.log('[DashboardPage] fetchDashboardData step 7: No diagnostic results returned');
       }
     } catch (err) {
+      console.error('[DashboardPage] fetchDashboardData error:', err);
       if (err instanceof Error && (err.message.includes('authorized') || err.message.includes('401'))) {
+        console.log('[DashboardPage] fetchDashboardData: Unauthorized (401), redirecting to /login');
         router.push('/login');
         return;
       }
       console.warn('Dashboard data fetch warning:', err);
     } finally {
+      console.log('[DashboardPage] fetchDashboardData finally: Setting loadingDashboard to false');
       setLoadingDashboard(false);
     }
   }, [user, router]);
 
   useEffect(() => {
+    console.log('[DashboardPage] useEffect triggered', { isLoading, hasUser: !!user });
     if (!isLoading && !user) {
+      console.log('[DashboardPage] useEffect: Auth state ready & no user -> Redirecting to /login');
       router.push('/login');
     } else if (user) {
+      console.log('[DashboardPage] useEffect: Auth state ready & user exists -> Calling fetchDashboardData');
       fetchDashboardData();
     }
   }, [isLoading, user, router, fetchDashboardData]);
 
   if (isLoading || loadingDashboard) {
+    console.log('[DashboardPage] Render step 3: Displaying Loading Dashboard screen', { isLoading, loadingDashboard });
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-400 text-sm">
         Loading student dashboard...
@@ -77,8 +106,11 @@ export default function DashboardPage() {
   }
 
   if (!user) {
+    console.log('[DashboardPage] Render step 3: No user found, returning null');
     return null;
   }
+
+  console.log('[DashboardPage] Render step 3: Displaying Main Dashboard View for user:', user.email);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100">

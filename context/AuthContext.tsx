@@ -46,14 +46,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [fetchCurrentUser]);
 
   const login = async (email: string, password?: string) => {
-    const res = await apiClient.login({ email, password });
-    if (res.success && res.data) {
-      const token = res.data.token || (res as unknown as { token?: string }).token;
-      if (token && typeof window !== 'undefined') {
-        localStorage.setItem('auth_token', token);
+    console.log('[AuthContext] login() called with email:', email);
+    try {
+      console.log('[AuthContext] login step 1: Sending request to apiClient.login');
+      const res = await apiClient.login({ email, password });
+      console.log('[AuthContext] login step 2: Received response from apiClient.login:', res);
+
+      if (res.success && res.data) {
+        const token = res.data.token || (res as unknown as { token?: string }).token;
+        console.log('[AuthContext] login step 3: Token extracted:', token ? '[TOKEN_EXISTS]' : '[NO_TOKEN]');
+
+        if (token && typeof window !== 'undefined') {
+          localStorage.setItem('auth_token', token);
+          console.log('[AuthContext] login step 4: Saved token to localStorage');
+        }
+
+        console.log('[AuthContext] login step 5: Setting user state:', res.data.user);
+        setUser(res.data.user);
+        console.log('[AuthContext] login step 6: Setting profile state:', res.data.profile);
+        setProfile(res.data.profile);
+      } else {
+        console.warn('[AuthContext] login failed or res.data is empty:', res);
       }
-      setUser(res.data.user);
-      setProfile(res.data.profile);
+    } catch (error) {
+      console.error('[AuthContext] login threw an error:', error);
+      throw error;
     }
   };
 
