@@ -24,13 +24,15 @@ import {
 export default function DashboardPage() {
   const router = useRouter();
   const { user, profile, isLoading } = useAuth();
-
+  console.log('user', user);
+  console.log('profile', profile);
+  console.log('isLoading', isLoading);
   const [activeAssessment, setActiveAssessment] = useState<AssessmentData | null>(null);
   const [results, setResults] = useState<DiagnosticResultData[]>([]);
   const [loadingDashboard, setLoadingDashboard] = useState<boolean>(true);
 
   const fetchDashboardData = useCallback(async () => {
-    if (!user) return;
+    // if (!user) return;
     try {
       setLoadingDashboard(true);
       const [aRes, rRes] = await Promise.all([
